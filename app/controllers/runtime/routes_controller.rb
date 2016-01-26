@@ -1,5 +1,3 @@
-# rubocop:disable CyclomaticComplexity
-
 module VCAP::CloudController
   class RoutesController < RestController::ModelController
     define_attributes do
