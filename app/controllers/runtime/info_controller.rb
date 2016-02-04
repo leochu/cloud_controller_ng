@@ -5,6 +5,7 @@ module VCAP::CloudController
     get '/v2/info', :read
     def read
       info = {
+        bitsservice: @config[:bits_service][:enabled],
         name: @config[:info][:name],
         build: @config[:info][:build],
         support: @config[:info][:support_address],
