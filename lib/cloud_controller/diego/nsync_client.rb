@@ -37,6 +37,11 @@ module VCAP::CloudController
         raise e
       end
 
+      #TODO during cross team pairing:
+      def cancel_task(task)
+
+      end
+
       def desire_app(process_guid, desire_message)
         if @url.nil?
           raise Errors::ApiError.new_from_details('RunnerUnavailable', 'invalid config')

@@ -102,12 +102,17 @@ Rails.application.routes.draw do
   get '/v3/apps/:app_guid/tasks', to: 'tasks#index'
   get '/v3/tasks/:task_guid', to: 'tasks#show'
   get '/v3/apps/:app_guid/tasks/:task_guid', to: 'tasks#show'
+  put '/v3/apps/:guid/tasks/:task_guid/cancel', to:'tasks#cancel'
+  put '/v3/tasks/:task_guid/cancel', to:'tasks#cancel'
   post '/v3/apps/:guid/tasks', to: 'tasks#create'
+
 
   get '/tasks', to: 'tasks#index'
   get '/apps/:app_guid/tasks', to: 'tasks#index'
   get '/tasks/:task_guid', to: 'tasks#show'
   get '/apps/:app_guid/tasks/:task_guid', to: 'tasks#show'
+  put '/apps/:guid/tasks/:task_guid/cancel', to: 'tasks#cancel'
+  put '/tasks/:task_guid/cancel', to: 'tasks#cancel'
   post '/apps/:guid/tasks', to: 'tasks#create'
 
   # service_bindings
