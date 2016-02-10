@@ -23,11 +23,7 @@ module VCAP::CloudController
       if missing_bits || new_bits?(buildpack, new_key)
         buildpack_blobstore.cp_to_blobstore(bits_file_path, new_key)
       end
-
-      if use_bits_service?
-        response = bits_client.upload_buildpack(buildpack.guid, bits_file_path, new_filename)
-        raise Errors::ApiError.new_from_details('BitsServiceInvalidResponse', 'failed to upload buildpack') if response.status != 201
-      end
+      upload_to_bits_service(buildpack.guid, bits_file_path, new_filename)
 
       old_buildpack_key = nil
 
@@ -53,6 +49,13 @@ module VCAP::CloudController
     private
 
     attr_reader :bits_client
+
+    def upload_to_bits_service(guid, file_path, file_name)
+      if use_bits_service?
+        response = bits_client.upload_buildpack(guid, file_path, file_name)
+        raise Errors::ApiError.new_from_details('BitsServiceInvalidResponse', 'failed to upload buildpack') if response.status != 201
+      end
+    end
 
     def use_bits_service?
       !! @bits_client
