@@ -244,7 +244,7 @@ module VCAP::CloudController
 
         optional(:bits_service) => {
           enabled: bool,
-          edpoint: String,
+          optional(:endpoint) => String,
         }
       }
     end
