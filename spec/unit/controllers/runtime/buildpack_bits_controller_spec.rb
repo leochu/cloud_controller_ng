@@ -168,6 +168,49 @@ module VCAP::CloudController
           expect(last_response.status).to eq(201)
         end
 
+        context 'when bits_service flag is enabled' do
+          let(:bits_service_config) do
+            {
+              bits_service: {
+                enabled: true,
+                endpoint: 'https://bits-service.example.com'
+              }
+            }
+          end
+
+          before do
+            TestConfig.override(bits_service_config)
+
+            allow(CloudController::DependencyLocator.instance.upload_handler).to receive(:uploaded_file).and_return(valid_zip)
+            allow(CloudController::DependencyLocator.instance.upload_handler).to receive(:uploaded_filename).and_return('buildpack.zip')
+          end
+
+          it 'still returns 201 on success' do
+            allow_any_instance_of(BitsClient).to receive(:upload_buildpack).
+              and_return(double(:response, status: 201))
+
+            put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body, admin_headers
+
+            expect(last_response.status).to eq(201)
+          end
+
+          it 'does an additional request to the bits service' do
+            expect_any_instance_of(BitsClient).
+              to receive(:upload_buildpack).with(test_buildpack.guid, valid_zip, 'buildpack.zip')
+            put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body, admin_headers
+          end
+
+          context "when the bits service doesn't return 201" do
+            it 'returns an error' do
+              allow_any_instance_of(BitsClient).to receive(:upload_buildpack).
+                and_return(OpenStruct.new(status: 500))
+              put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body, admin_headers
+
+              expect(last_response.status).to eq(500)
+            end
+          end
+        end
+
         context 'when the upload file is nil' do
           it 'should be a bad request' do
             expect(FileUtils).not_to receive(:rm_f)

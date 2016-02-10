@@ -1,3 +1,5 @@
+require 'bits_client/client'
+
 module VCAP::CloudController
   class BuildpackBitsController < RestController::ModelController
     def self.dependencies
@@ -27,8 +29,12 @@ module VCAP::CloudController
       raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_file.to_s == ''
 
       uploaded_filename = File.basename(uploaded_filename)
-
       upload_buildpack = UploadBuildpack.new(buildpack_blobstore)
+
+      if @config[:bits_service] && @config[:bits_service][:enabled]
+        bits_client = BitsClient.new(endpoint: @config[:bits_service][:endpoint])
+        upload_buildpack.enable_bits_service!(bits_client: bits_client)
+      end
 
       if upload_buildpack.upload_buildpack(buildpack, uploaded_file, uploaded_filename)
         [HTTP::CREATED, object_renderer.render_json(self.class, buildpack, @opts)]
