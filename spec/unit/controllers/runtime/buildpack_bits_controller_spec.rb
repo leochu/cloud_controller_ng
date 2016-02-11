@@ -187,7 +187,7 @@ module VCAP::CloudController
 
           it 'still returns 201 on success' do
             allow_any_instance_of(BitsClient).to receive(:upload_buildpack).
-              and_return(double(:response, status: 201))
+              and_return(double(:response, code: '201'))
 
             put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body, admin_headers
 
@@ -203,7 +203,7 @@ module VCAP::CloudController
           context "when the bits service doesn't return 201" do
             it 'returns an error' do
               allow_any_instance_of(BitsClient).to receive(:upload_buildpack).
-                and_return(OpenStruct.new(status: 500))
+                and_return(double(:response, code: '500'))
               put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body, admin_headers
 
               expect(last_response.status).to eq(500)

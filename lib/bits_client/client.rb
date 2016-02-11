@@ -1,16 +1,16 @@
-require 'httpclient'
+require 'net/http/post/multipart'
 
 class BitsClient
   require_relative 'errors'
 
   def initialize(endpoint:)
-    @endpoint = endpoint
+    @endpoint = URI.parse(endpoint)
   end
 
   def upload_buildpack(guid, buildpack_path, filename)
-    with_file_arg!(buildpack_path) do |file|
-      body = { buildpack: file, buildpack_name: filename }
-      put("buildpacks/#{guid}", body)
+    with_file_attachment!(buildpack_path, filename) do |file_attachment|
+      body = { buildpack: file_attachment }
+      put("/buildpacks/#{guid}", body)
     end
   end
 
@@ -18,11 +18,12 @@ class BitsClient
 
   attr_reader :endpoint
 
-  def with_file_arg!(file_path, &block)
+  def with_file_attachment!(file_path, filename, &block)
     validate_file! file_path
 
     File.open(file_path) do |file|
-      yield file
+      attached_file = UploadIO.new(file, 'application/octet-stream', filename)
+      yield attached_file
     end
   end
 
@@ -33,10 +34,11 @@ class BitsClient
   end
 
   def put(path, body)
-    http_client.put(path, body)
+    request = Net::HTTP::Put::Multipart.new(path, body)
+    http_client.request(request)
   end
 
   def http_client
-    @http_client ||= HTTPClient.new(base_url: endpoint)
+    @http_client ||= Net::HTTP.new(endpoint.host, endpoint.port)
   end
 end

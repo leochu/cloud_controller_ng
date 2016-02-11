@@ -177,14 +177,14 @@ module VCAP::CloudController
         it 'also uploads to the bit_service' do
           expect(bits_client).to receive(:upload_buildpack).
             with(buildpack.guid, valid_zip, filename).
-            and_return(double(:response, status: 201))
+            and_return(double(:response, code: '201'))
           upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
         end
 
         context 'when the bits service return an error' do
           it 'raises an ApiError' do
             allow(bits_client).to receive(:upload_buildpack).
-              and_return(double(:response, status: 500))
+              and_return(double(:response, code: '500'))
 
             expect {
               upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)

@@ -27,7 +27,7 @@ describe BitsClient do
           to_return(status: 201)
 
         response = subject.upload_buildpack(guid, file_path, file_name)
-        expect(response.status).to be(201)
+        expect(response.code).to eq('201')
       end
 
       context 'when invalid buildpack is given' do
