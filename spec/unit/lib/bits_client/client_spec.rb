@@ -39,7 +39,7 @@ describe BitsClient do
       end
     end
 
-    describe "#download_buildpack" do
+    describe '#download_buildpack' do
       let(:guid) { SecureRandom.uuid }
 
       it 'makes the correct request to the bits endpoint' do
@@ -57,7 +57,6 @@ describe BitsClient do
         response = subject.download_buildpack(guid)
         expect(response.code).to eq('404')
       end
-
     end
   end
 end

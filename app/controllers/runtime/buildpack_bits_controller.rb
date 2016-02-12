@@ -31,8 +31,7 @@ module VCAP::CloudController
       uploaded_filename = File.basename(uploaded_filename)
       upload_buildpack = UploadBuildpack.new(buildpack_blobstore)
 
-      if @config[:bits_service] && @config[:bits_service][:enabled]
-        bits_client = BitsClient.new(endpoint: @config[:bits_service][:endpoint])
+      if using_bits_service?
         upload_buildpack.enable_bits_service!(bits_client: bits_client)
       end
 
@@ -52,6 +51,12 @@ module VCAP::CloudController
       blob = buildpack_blobstore.blob(obj.key) if obj && obj.key
       raise Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
+      if using_bits_service?
+        bits_response = bits_client.download_buildpack(guid)
+        raise Errors::ApiError.new_from_details('NotFound', "BitsSerice: #{guid}") if bits_response.code.to_i == 404
+        raise Errors::ApiError.new_from_details('BitsServiceInvalidResponse', 'failed to download buildpack') if bits_response.code.to_i != 200
+      end
+
       if @buildpack_blobstore.local?
         send_local_blob(blob)
       else
@@ -67,6 +72,14 @@ module VCAP::CloudController
       super
       @buildpack_blobstore = dependencies[:buildpack_blobstore]
       @upload_handler = dependencies[:upload_handler]
+    end
+
+    def bits_client
+      @bits_client ||= BitsClient.new(endpoint: @config[:bits_service][:endpoint])
+    end
+
+    def using_bits_service?
+      @config[:bits_service] && @config[:bits_service][:enabled]
     end
 
     def send_local_blob(blob)

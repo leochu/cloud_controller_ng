@@ -251,9 +251,8 @@ module VCAP::CloudController
 
         before do
           TestConfig.override(staging_config)
+          VCAP::CloudController::Buildpack.create_from_hash({ name: 'get_binary_buildpack', key: 'xyz', position: 0 })
         end
-
-        before { VCAP::CloudController::Buildpack.create_from_hash({ name: 'get_binary_buildpack', key: 'xyz', position: 0 }) }
 
         it 'returns NOT AUTHENTICATED (401) users without correct basic auth' do
           get "/v2/buildpacks/#{test_buildpack.guid}/download", '{}'
@@ -272,6 +271,67 @@ module VCAP::CloudController
           authorize(staging_user, staging_password)
           get "/v2/buildpacks/#{test_buildpack.guid}/download"
           expect(last_response.status).to eq(404)
+        end
+
+        context 'when bits_service flag is enabled' do
+          let(:bits_service_config) do
+            {
+              bits_service: {
+                enabled: true,
+                endpoint: 'https://bits-service.example.com'
+              },
+              staging: {
+                timeout_in_seconds: 240,
+                auth: {
+                  user: staging_user,
+                  password: staging_password,
+                },
+              }
+            }
+          end
+
+          before do
+            TestConfig.override(bits_service_config)
+            authorize(staging_user, staging_password)
+
+            allow_any_instance_of(BitsClient).to receive(:upload_buildpack).
+              and_return(double(:response, code: '201'))
+            put "/v2/buildpacks/#{test_buildpack.guid}/bits", { buildpack: valid_zip }, admin_headers
+          end
+
+          it 'still returns 302 on success' do
+            allow_any_instance_of(BitsClient).to receive(:download_buildpack).
+              and_return(double(:response, code: '200'))
+
+            get "/v2/buildpacks/#{test_buildpack.guid}/download"
+            expect(last_response.status).to eq(302)
+          end
+
+          it 'does an additional request to the bits service' do
+            expect_any_instance_of(BitsClient).
+              to receive(:download_buildpack).with(test_buildpack.guid)
+            get "/v2/buildpacks/#{test_buildpack.guid}/download"
+          end
+
+          context 'when the bits service return 404' do
+            it 'returns an error' do
+              allow_any_instance_of(BitsClient).to receive(:download_buildpack).
+                and_return(double(:response, code: '404'))
+              get "/v2/buildpacks/#{test_buildpack.guid}/download"
+
+              expect(last_response.status).to eq(404)
+            end
+          end
+
+          context 'when the bits service return an error' do
+            it 'returns an error' do
+              allow_any_instance_of(BitsClient).to receive(:download_buildpack).
+                and_return(double(:response, code: '500'))
+              get "/v2/buildpacks/#{test_buildpack.guid}/download"
+
+              expect(last_response.status).to eq(500)
+            end
+          end
         end
 
         context 'when blobstore is local' do
