@@ -38,5 +38,26 @@ describe BitsClient do
         end
       end
     end
+
+    describe "#download_buildpack" do
+      let(:guid) { SecureRandom.uuid }
+
+      it 'makes the correct request to the bits endpoint' do
+        request = stub_request(:get, "http://bits-service.com/buildpacks/#{guid}").
+          to_return(status: 200)
+
+        subject.download_buildpack(guid)
+        expect(request).to have_been_requested
+      end
+
+      it 'returns the request response' do
+        stub_request(:get, "http://bits-service.com/buildpacks/#{guid}").
+          to_return(status: 404)
+
+        response = subject.download_buildpack(guid)
+        expect(response.code).to eq('404')
+      end
+
+    end
   end
 end

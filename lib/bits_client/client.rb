@@ -14,6 +14,10 @@ class BitsClient
     end
   end
 
+  def download_buildpack(guid)
+    get("/buildpacks/#{guid}")
+  end
+
   private
 
   attr_reader :endpoint
@@ -31,6 +35,11 @@ class BitsClient
     return if File.exist?(file_path)
 
     raise Errors::FileDoesNotExist.new("Could not find file: #{file_path}")
+  end
+
+  def get(path)
+    request = Net::HTTP::Get.new(path)
+    http_client.request(request)
   end
 
   def put(path, body)
