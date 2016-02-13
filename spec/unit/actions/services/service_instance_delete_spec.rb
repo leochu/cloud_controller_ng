@@ -14,6 +14,9 @@ module VCAP::CloudController
       let!(:service_binding_1) { ServiceBinding.make(service_instance: service_instance_1) }
       let!(:service_binding_2) { ServiceBinding.make(service_instance: service_instance_2) }
 
+      let!(:service_binding_v3_1) { ServiceBindingModel.make(service_instance: service_instance_1) }
+      let!(:service_binding_v3_2) { ServiceBindingModel.make(service_instance: service_instance_2) }
+
       let!(:route_1) { Route.make(space: service_instance_1.space) }
       let!(:route_2) { Route.make(space: service_instance_2.space) }
       let!(:route_binding_1) { RouteBinding.make(route: route_1, service_instance: service_instance_1) }
@@ -43,6 +46,12 @@ module VCAP::CloudController
         expect {
           service_instance_delete.delete(service_instance_dataset)
         }.to change { ServiceBinding.count }.by(-2)
+      end
+
+      it 'deletes all the v3 bindings for all the service instance' do
+        expect {
+          service_instance_delete.delete(service_instance_dataset)
+        }.to change { ServiceBindingModel.count }.by(-2)
       end
 
       it 'deletes all the route bindings for all the service instance' do

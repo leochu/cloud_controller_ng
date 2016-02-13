@@ -1974,6 +1974,42 @@ module VCAP::CloudController
           end
         end
 
+       context 'when the instance has v3 bindings' do
+          let(:service_binding) { ServiceBindingModel.make(service_instance: service_instance) }
+
+          before do
+            stub_unbind(service_binding)
+          end
+
+          it 'does not delete the associated service bindings' do
+            expect {
+              delete "/v2/service_instances/#{service_instance.guid}", {}, headers_for(developer)
+            }.to change(ServiceBindingModel, :count).by(0)
+            expect(ServiceInstance.find(guid: service_instance.guid)).to be
+            expect(ServiceBindingModel.find(guid: service_binding.guid)).to be
+          end
+
+          it 'should give the user an error' do
+            delete "/v2/service_instances/#{service_instance.guid}", {}, headers_for(developer)
+
+            expect(last_response).to have_status_code 400
+            expect(last_response.body).to include 'AssociationNotEmpty'
+            expect(last_response.body).to include
+            'Please delete the service_bindings, service_keys, and routes associations for your service_instances'
+          end
+
+          context 'and recursive=true' do
+            it 'deletes the associated service bindings' do
+              expect {
+                delete "/v2/service_instances/#{service_instance.guid}?recursive=true", {}, headers_for(developer)
+              }.to change(ServiceBindingModel, :count).by(-1)
+              expect(last_response.status).to eq(204)
+              expect(ServiceInstance.find(guid: service_instance.guid)).to be_nil
+              expect(ServiceBindingModel.find(guid: service_binding.guid)).to be_nil
+            end
+          end
+        end
+
         context 'when the instance has route bindings' do
           let(:route_binding) { RouteBinding.make }
           let(:service_instance) { route_binding.service_instance }
@@ -2423,6 +2459,24 @@ module VCAP::CloudController
 
               expect(ServiceBinding.find(guid: service_binding_1.guid)).to be_nil
               expect(ServiceBinding.find(guid: service_binding_2.guid)).to be_nil
+              expect(ManagedServiceInstance.find(guid: service_instance.guid)).to be_nil
+              expect(last_response.status).to eq(204)
+            end
+          end
+
+          context 'when the service instance has v3 service bindings' do
+            let!(:service_binding_1) { ServiceBindingModel.make(service_instance: service_instance) }
+            let!(:service_binding_2) { ServiceBindingModel.make(service_instance: service_instance) }
+
+            it 'deletes the service instance and all of its service bindings' do
+              expect(ManagedServiceInstance.find(guid: service_instance.guid)).not_to be_nil
+
+              delete "/v2/service_instances/#{service_instance.guid}?purge=true", {}, admin_headers
+
+              pp last_response
+
+              expect(ServiceBindingModel.find(guid: service_binding_1.guid)).to be_nil
+              expect(ServiceBindingModel.find(guid: service_binding_2.guid)).to be_nil
               expect(ManagedServiceInstance.find(guid: service_instance.guid)).to be_nil
               expect(last_response.status).to eq(204)
             end

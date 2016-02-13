@@ -68,6 +68,7 @@ module VCAP::CloudController
 
     def delete_service_bindings(service_instance)
       ServiceBindingDelete.new.delete(service_instance.service_bindings_dataset)
+      ServiceBindingModelDelete.new.synchronous_delete(service_instance.service_bindings_v3_dataset)
     end
 
     def delete_service_keys(service_instance)

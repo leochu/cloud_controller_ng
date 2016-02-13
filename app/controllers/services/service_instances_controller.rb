@@ -388,7 +388,7 @@ module VCAP::CloudController
     end
 
     def has_bindings?(service_instance)
-      !service_instance.service_bindings.empty?
+      !service_instance.service_bindings.empty? || !service_instance.service_bindings_v3.empty?
     end
 
     def has_keys?(service_instance)

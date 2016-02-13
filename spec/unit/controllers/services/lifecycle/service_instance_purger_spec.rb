@@ -39,6 +39,21 @@ module VCAP::CloudController
         end
       end
 
+      context 'when there are service bindings' do
+        let!(:service_binding_1) { ServiceBinding.make(service_instance: service_instance) }
+        let!(:service_binding_2) { ServiceBinding.make(service_instance: service_instance) }
+
+        it 'records a service instance with a service binding delete event' do
+          purger.purge(service_instance)
+
+          events              = Event.where(type: 'audit.service_binding.delete').all
+          event_binding_guids = events.collect(&:actee)
+
+          expect(events.length).to eq(2)
+          expect(event_binding_guids).to match_array([service_binding_1.guid, service_binding_2.guid])
+        end
+      end
+
       context 'when there are service keys' do
         let!(:service_key_1) { ServiceKey.make(service_instance: service_instance) }
         let!(:service_key_2) { ServiceKey.make(service_instance: service_instance) }

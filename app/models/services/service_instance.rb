@@ -22,6 +22,7 @@ module VCAP::CloudController
     one_to_one :service_instance_operation
 
     one_to_many :service_bindings, before_add: :validate_service_binding
+    one_to_many :service_bindings_v3, class: 'VCAP::CloudController::ServiceBindingModel'
     one_to_many :service_keys
     many_to_many :routes, join_table: :route_bindings
 
