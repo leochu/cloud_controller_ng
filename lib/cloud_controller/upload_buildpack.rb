@@ -6,10 +6,6 @@ module VCAP::CloudController
       @buildpack_blobstore = blobstore
     end
 
-    def enable_bits_service!(bits_client:)
-      @bits_client = bits_client
-    end
-
     def upload_buildpack(buildpack, bits_file_path, new_filename)
       return false if buildpack.locked
 
@@ -49,8 +45,6 @@ module VCAP::CloudController
 
     private
 
-    attr_reader :bits_client
-
     def upload_to_bits_service(buildpack, file_path, file_name)
       return nil unless use_bits_service?
 
@@ -60,7 +54,11 @@ module VCAP::CloudController
     end
 
     def use_bits_service?
-      !! @bits_client
+      !!bits_client
+    end
+
+    def bits_client
+      CloudController::DependencyLocator.instance.bits_client
     end
 
     def new_bits?(buildpack, key)

@@ -5,11 +5,13 @@ require 'securerandom'
 
 describe BitsClient do
   let(:endpoint) { 'http://bits-service.com/' }
+
+  let(:guid) { SecureRandom.uuid }
+
   subject { BitsClient.new(endpoint: endpoint) }
 
   context 'Buildpacks' do
     describe '#upload_buildpack' do
-      let(:guid) { SecureRandom.uuid }
       let(:file_path) { Tempfile.new('buildpack').path }
       let(:file_name) { 'my-buildpack.zip' }
 
@@ -40,8 +42,6 @@ describe BitsClient do
     end
 
     describe '#download_buildpack' do
-      let(:guid) { SecureRandom.uuid }
-
       it 'makes the correct request to the bits endpoint' do
         request = stub_request(:get, "http://bits-service.com/buildpacks/#{guid}").
           to_return(status: 200)
@@ -55,6 +55,24 @@ describe BitsClient do
           to_return(status: 404)
 
         response = subject.download_buildpack(guid)
+        expect(response.code).to eq('404')
+      end
+    end
+
+    describe '#delete_buildpack' do
+      it 'makes the correct request to the bits endpoint' do
+        request = stub_request(:delete, "http://bits-service.com/buildpacks/#{guid}").
+          to_return(status: 204)
+
+        subject.delete_buildpack(guid)
+        expect(request).to have_been_requested
+      end
+
+      it 'returns the request response' do
+        stub_request(:delete, "http://bits-service.com/buildpacks/#{guid}").
+          to_return(status: 404)
+
+        response = subject.delete_buildpack(guid)
         expect(response.code).to eq('404')
       end
     end

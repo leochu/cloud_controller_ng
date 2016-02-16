@@ -1,9 +1,7 @@
-require 'bits_client/client'
-
 module VCAP::CloudController
   class BuildpackBitsController < RestController::ModelController
     def self.dependencies
-      [:buildpack_blobstore, :upload_handler]
+      [:buildpack_blobstore, :upload_handler, :bits_client, :use_bits_service]
     end
 
     path_base 'buildpacks'
@@ -31,10 +29,6 @@ module VCAP::CloudController
       uploaded_filename = File.basename(uploaded_filename)
       upload_buildpack = UploadBuildpack.new(buildpack_blobstore)
 
-      if using_bits_service?
-        upload_buildpack.enable_bits_service!(bits_client: bits_client)
-      end
-
       if upload_buildpack.upload_buildpack(buildpack, uploaded_file, uploaded_filename)
         [HTTP::CREATED, object_renderer.render_json(self.class, buildpack, @opts)]
       else
@@ -51,7 +45,7 @@ module VCAP::CloudController
       blob = buildpack_blobstore.blob(obj.key) if obj && obj.key
       raise Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
-      if using_bits_service?
+      if use_bits_service
         bits_response = bits_client.download_buildpack(obj.bits_guid)
         raise Errors::ApiError.new_from_details('NotFound', "BitsSerice: #{obj.bits_guid}") if bits_response.code.to_i == 404
         raise Errors::ApiError.new_from_details('BitsServiceInvalidResponse', 'failed to download buildpack') if bits_response.code.to_i != 200
@@ -66,20 +60,14 @@ module VCAP::CloudController
 
     private
 
-    attr_reader :buildpack_blobstore, :upload_handler
+    attr_reader :buildpack_blobstore, :upload_handler, :bits_client, :use_bits_service
 
     def inject_dependencies(dependencies)
       super
       @buildpack_blobstore = dependencies[:buildpack_blobstore]
       @upload_handler = dependencies[:upload_handler]
-    end
-
-    def bits_client
-      @bits_client ||= BitsClient.new(endpoint: @config[:bits_service][:endpoint])
-    end
-
-    def using_bits_service?
-      @config[:bits_service] && @config[:bits_service][:enabled]
+      @bits_client = dependencies[:bits_client]
+      @use_bits_service = dependencies[:use_bits_service]
     end
 
     def send_local_blob(blob)

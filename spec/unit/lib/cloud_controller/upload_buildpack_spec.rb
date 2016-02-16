@@ -31,9 +31,12 @@ module VCAP::CloudController
 
     let(:expected_sha_valid_zip) { "#{buildpack.guid}_#{sha_valid_zip}" }
 
+    let(:bits_client) { nil }
+
     context 'upload_buildpack' do
       before do
         allow(CloudController::DependencyLocator.instance).to receive(:buildpack_blobstore).and_return(buildpack_blobstore)
+        allow(CloudController::DependencyLocator.instance).to receive(:bits_client).and_return(bits_client)
       end
 
       context 'and the upload to the blobstore succeeds' do
@@ -169,10 +172,6 @@ module VCAP::CloudController
 
       context 'when using the bits service' do
         let(:bits_client) { double(:bits_client) }
-
-        before do
-          upload_buildpack.enable_bits_service!(bits_client: bits_client)
-        end
 
         it 'also uploads to the bit_service' do
           expect(bits_client).to receive(:upload_buildpack).

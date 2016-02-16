@@ -9,6 +9,7 @@ require 'cloud_controller/blob_sender/missing_blob_handler'
 require 'cloud_controller/diego/stager_client'
 require 'cloud_controller/diego/tps_client'
 require 'cloud_controller/diego/messenger'
+require 'bits_client/client'
 
 module CloudController
   class DependencyLocator
@@ -242,6 +243,15 @@ module CloudController
       else
         CloudController::BlobSender::DefaultLocalBlobSender.new(missing_blob_handler)
       end
+    end
+
+    def bits_client
+      return nil unless use_bits_service
+      BitsClient.new(endpoint: @config[:bits_service][:endpoint])
+    end
+
+    def use_bits_service
+      @config[:bits_service] && @config[:bits_service][:enabled]
     end
 
     private

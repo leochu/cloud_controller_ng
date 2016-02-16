@@ -18,6 +18,10 @@ class BitsClient
     get("/buildpacks/#{guid}")
   end
 
+  def delete_buildpack(guid)
+    delete("/buildpacks/#{guid}")
+  end
+
   private
 
   attr_reader :endpoint
@@ -44,6 +48,11 @@ class BitsClient
 
   def post(path, body)
     request = Net::HTTP::Post::Multipart.new(path, body)
+    http_client.request(request)
+  end
+
+  def delete(path)
+    request = Net::HTTP::Delete.new(path)
     http_client.request(request)
   end
 
