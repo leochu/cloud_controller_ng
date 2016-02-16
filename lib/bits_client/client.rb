@@ -7,10 +7,10 @@ class BitsClient
     @endpoint = URI.parse(endpoint)
   end
 
-  def upload_buildpack(guid, buildpack_path, filename)
+  def upload_buildpack(buildpack_path, filename)
     with_file_attachment!(buildpack_path, filename) do |file_attachment|
       body = { buildpack: file_attachment }
-      put("/buildpacks/#{guid}", body)
+      post('/buildpacks', body)
     end
   end
 
@@ -42,8 +42,8 @@ class BitsClient
     http_client.request(request)
   end
 
-  def put(path, body)
-    request = Net::HTTP::Put::Multipart.new(path, body)
+  def post(path, body)
+    request = Net::HTTP::Post::Multipart.new(path, body)
     http_client.request(request)
   end
 

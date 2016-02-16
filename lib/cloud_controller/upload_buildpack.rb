@@ -20,10 +20,11 @@ module VCAP::CloudController
       return false if !new_bits?(buildpack, new_key) && !new_filename?(buildpack, new_filename) && !missing_bits
 
       # replace blob if new
+      bits_guid = nil
       if missing_bits || new_bits?(buildpack, new_key)
         buildpack_blobstore.cp_to_blobstore(bits_file_path, new_key)
+        bits_guid = upload_to_bits_service(buildpack, bits_file_path, new_filename)
       end
-      upload_to_bits_service(buildpack.guid, bits_file_path, new_filename)
 
       old_buildpack_key = nil
 
@@ -31,7 +32,7 @@ module VCAP::CloudController
         Buildpack.db.transaction do
           buildpack.lock!
           old_buildpack_key = buildpack.key
-          buildpack.update_from_hash(key: new_key, filename: new_filename)
+          buildpack.update_from_hash(key: new_key, filename: new_filename, bits_guid: bits_guid)
         end
       rescue Sequel::Error
         BuildpackBitsDelete.delete_when_safe(new_key, 0)
@@ -50,11 +51,12 @@ module VCAP::CloudController
 
     attr_reader :bits_client
 
-    def upload_to_bits_service(guid, file_path, file_name)
-      if use_bits_service?
-        response = bits_client.upload_buildpack(guid, file_path, file_name)
-        raise Errors::ApiError.new_from_details('BitsServiceInvalidResponse', 'failed to upload buildpack') if response.code.to_i != 201
-      end
+    def upload_to_bits_service(buildpack, file_path, file_name)
+      return nil unless use_bits_service?
+
+      response = bits_client.upload_buildpack(file_path, file_name)
+      raise Errors::ApiError.new_from_details('BitsServiceInvalidResponse', 'failed to upload buildpack') if response.code.to_i != 201
+      JSON.parse(response.body)['guid']
     end
 
     def use_bits_service?

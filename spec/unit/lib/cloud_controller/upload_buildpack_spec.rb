@@ -176,8 +176,8 @@ module VCAP::CloudController
 
         it 'also uploads to the bit_service' do
           expect(bits_client).to receive(:upload_buildpack).
-            with(buildpack.guid, valid_zip, filename).
-            and_return(double(:response, code: '201'))
+            with(valid_zip, filename).
+            and_return(double(:response, code: '201', body: '{ "guid": "foo" }'))
           upload_buildpack.upload_buildpack(buildpack, valid_zip, filename)
         end
 

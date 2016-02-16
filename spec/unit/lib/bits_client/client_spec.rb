@@ -14,26 +14,26 @@ describe BitsClient do
       let(:file_name) { 'my-buildpack.zip' }
 
       it 'makes the correct request to the bits endpoint' do
-        request = stub_request(:put, "http://bits-service.com/buildpacks/#{guid}").
+        request = stub_request(:post, 'http://bits-service.com/buildpacks').
           with(body: /.*buildpack".*/).
           to_return(status: 201)
 
-        subject.upload_buildpack(guid, file_path, file_name)
+        subject.upload_buildpack(file_path, file_name)
         expect(request).to have_been_requested
       end
 
       it 'returns the request response' do
-        stub_request(:put, "http://bits-service.com/buildpacks/#{guid}").
+        stub_request(:post, 'http://bits-service.com/buildpacks').
           to_return(status: 201)
 
-        response = subject.upload_buildpack(guid, file_path, file_name)
+        response = subject.upload_buildpack(file_path, file_name)
         expect(response.code).to eq('201')
       end
 
       context 'when invalid buildpack is given' do
         it 'raises the correct exception' do
           expect {
-            subject.upload_buildpack(guid, '/not-here', file_name)
+            subject.upload_buildpack('/not-here', file_name)
           }.to raise_error(BitsClient::Errors::FileDoesNotExist)
         end
       end

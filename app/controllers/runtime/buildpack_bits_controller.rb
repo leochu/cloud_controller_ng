@@ -52,8 +52,8 @@ module VCAP::CloudController
       raise Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
       if using_bits_service?
-        bits_response = bits_client.download_buildpack(guid)
-        raise Errors::ApiError.new_from_details('NotFound', "BitsSerice: #{guid}") if bits_response.code.to_i == 404
+        bits_response = bits_client.download_buildpack(obj.bits_guid)
+        raise Errors::ApiError.new_from_details('NotFound', "BitsSerice: #{obj.bits_guid}") if bits_response.code.to_i == 404
         raise Errors::ApiError.new_from_details('BitsServiceInvalidResponse', 'failed to download buildpack') if bits_response.code.to_i != 200
       end
 

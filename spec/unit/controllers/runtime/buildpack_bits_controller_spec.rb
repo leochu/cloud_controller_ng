@@ -46,7 +46,7 @@ module VCAP::CloudController
     after { FileUtils.rm_rf(tmpdir) }
 
     context 'Buildpack binaries' do
-      let(:test_buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ name: 'upload_binary_buildpack', position: 0 }) }
+      let(:test_buildpack) { VCAP::CloudController::Buildpack.create_from_hash({ bits_guid: 'abcd', name: 'upload_binary_buildpack', position: 0 }) }
 
       before { CloudController::DependencyLocator.instance.register(:upload_handler, UploadHandler.new(TestConfig.config)) }
 
@@ -187,7 +187,7 @@ module VCAP::CloudController
 
           it 'still returns 201 on success' do
             allow_any_instance_of(BitsClient).to receive(:upload_buildpack).
-              and_return(double(:response, code: '201'))
+              and_return(double(:response, code: '201', body: { guid: test_buildpack.guid }.to_json))
 
             put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body, admin_headers
 
@@ -196,7 +196,7 @@ module VCAP::CloudController
 
           it 'does an additional request to the bits service' do
             expect_any_instance_of(BitsClient).
-              to receive(:upload_buildpack).with(test_buildpack.guid, valid_zip, 'buildpack.zip')
+              to receive(:upload_buildpack).with(valid_zip, 'buildpack.zip')
             put "/v2/buildpacks/#{test_buildpack.guid}/bits", upload_body, admin_headers
           end
 
@@ -295,7 +295,7 @@ module VCAP::CloudController
             authorize(staging_user, staging_password)
 
             allow_any_instance_of(BitsClient).to receive(:upload_buildpack).
-              and_return(double(:response, code: '201'))
+              and_return(double(:response, code: '201', body: { guid: test_buildpack.bits_guid }.to_json))
             put "/v2/buildpacks/#{test_buildpack.guid}/bits", { buildpack: valid_zip }, admin_headers
           end
 
@@ -309,7 +309,7 @@ module VCAP::CloudController
 
           it 'does an additional request to the bits service' do
             expect_any_instance_of(BitsClient).
-              to receive(:download_buildpack).with(test_buildpack.guid)
+              to receive(:download_buildpack).with(test_buildpack.bits_guid)
             get "/v2/buildpacks/#{test_buildpack.guid}/download"
           end
 
